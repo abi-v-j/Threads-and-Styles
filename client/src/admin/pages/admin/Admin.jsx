@@ -1,39 +1,40 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 const Admin = () => {
-  const [rows, setRows] = useState([]);
+  const [admins, setAdmins] = useState([]);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [editId, setEditId] = useState(null);
 
-  const load = async () => {
+  const fetchAdmins = async () => {
     const res = await axios.get("http://localhost:5000/admin");
-    setRows(res.data.data);
+    setAdmins(res.data.results);
   };
 
   useEffect(() => {
-    load();
+    fetchAdmins();
   }, []);
 
   const save = async () => {
     const payload = { name, email, password };
+    let res;
     if (editId) {
-      await axios.put(`http://localhost:5000/admin/${editId}`, payload);
+      res = await axios.put(`http://localhost:5000/admin/${editId}`, payload);
     } else {
-      await axios.post("http://localhost:5000/admin", payload);
+      res = await axios.post("http://localhost:5000/admin", payload);
     }
+    setAdmins(res.data.results);
     setName("");
     setEmail("");
     setPassword("");
     setEditId(null);
-    load();
   };
 
   const del = async (id) => {
-    await axios.delete(`http://localhost:5000/admin/${id}`);
-    load();
+    const res = await axios.delete(`http://localhost:5000/admin/${id}`);
+    setAdmins(res.data.results);
   };
 
   const startEdit = (r) => {
@@ -43,11 +44,25 @@ const Admin = () => {
     setEditId(r.adminId);
   };
 
+  const handleClear = () => {
+    setName("");
+    setEmail("");
+    setPassword("");
+    setEditId(null);
+  };
+
   return (
     <>
-      <table border="1" cellPadding="6">
+      {/* Form Table */}
+      <table
+        border="1"
+        cellPadding="6"
+        cellSpacing="0"
+        style={{ borderCollapse: "collapse", marginBottom: "2rem" }}
+      >
         <tbody>
           <tr>
+            <td>Name</td>
             <td>
               <input
                 placeholder="Name"
@@ -55,6 +70,9 @@ const Admin = () => {
                 onChange={(e) => setName(e.target.value)}
               />
             </td>
+          </tr>
+          <tr>
+            <td>Email</td>
             <td>
               <input
                 placeholder="Email"
@@ -62,6 +80,9 @@ const Admin = () => {
                 onChange={(e) => setEmail(e.target.value)}
               />
             </td>
+          </tr>
+          <tr>
+            <td>Password</td>
             <td>
               <input
                 placeholder="Password"
@@ -69,38 +90,33 @@ const Admin = () => {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </td>
-            <td>
+          </tr>
+          <tr>
+            <td colSpan="2" style={{ textAlign: "center" }}>
               <button onClick={save}>{editId ? "Update" : "Save"}</button>
-              {editId && (
-                <button
-                  onClick={() => {
-                    setEditId(null);
-                    setName("");
-                    setEmail("");
-                    setPassword("");
-                  }}
-                >
-                  Cancel
-                </button>
-              )}
+              {editId && <button onClick={handleClear}>Cancel</button>}
             </td>
           </tr>
         </tbody>
       </table>
-      <br></br>
-      <br></br>
-      <br></br>
-      <table border="1" cellPadding="6">
+
+      {/* Data Table */}
+      <table
+        border="1"
+        cellPadding="6"
+        cellSpacing="0"
+        style={{ borderCollapse: "collapse" }}
+      >
         <thead>
           <tr>
             <th>Name</th>
             <th>Email</th>
             <th>Password</th>
-            <th>Action</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
+          {admins.map((r) => (
             <tr key={r.adminId}>
               <td>{r.name}</td>
               <td>{r.email}</td>

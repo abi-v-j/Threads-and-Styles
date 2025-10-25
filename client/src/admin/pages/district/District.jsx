@@ -1,56 +1,94 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 const District = () => {
-  const [rows, setRows] = useState([]);
+  const [districts, setDistricts] = useState([]);
   const [name, setName] = useState("");
   const [editId, setEditId] = useState(null);
 
-  const load = async () => {
+  const fetchDistricts = async () => {
     const res = await axios.get("http://localhost:5000/district");
-    setRows(res.data.data);
+    setDistricts(res.data.results);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { fetchDistricts(); }, []);
 
   const save = async () => {
+    const payload = { name };
+    let res;
     if (editId) {
-      await axios.put(`http://localhost:5000/district/${editId}`, { name });
+      res = await axios.put(`http://localhost:5000/district/${editId}`, payload);
     } else {
-      await axios.post("http://localhost:5000/district", { name });
+      res = await axios.post("http://localhost:5000/district", payload);
     }
-    setName(""); setEditId(null); load();
+    setDistricts(res.data.results);
+    setName("");
+    setEditId(null);
   };
 
   const del = async (id) => {
-    await axios.delete(`http://localhost:5000/district/${id}`);
-    load();
+    const res = await axios.delete(`http://localhost:5000/district/${id}`);
+    setDistricts(res.data.results);
+  };
+
+  const startEdit = (r) => {
+    setName(r.districtName);
+    setEditId(r.districtId);
+  };
+
+  const handleClear = () => {
+    setName("");
+    setEditId(null);
   };
 
   return (
     <>
-      <table border="1" cellPadding="6">
+      {/* Form Table */}
+      <table
+        border="1"
+        cellPadding="6"
+        cellSpacing="0"
+        style={{ borderCollapse: "collapse", marginBottom: "2rem" }}
+      >
         <tbody>
           <tr>
-            <td><input placeholder="District name" value={name} onChange={(e) => setName(e.target.value)} /></td>
+            <td>District</td>
             <td>
+              <input
+                placeholder="District name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </td>
+          </tr>
+          <tr>
+            <td colSpan="2" style={{ textAlign: "center" }}>
               <button onClick={save}>{editId ? "Update" : "Save"}</button>
-              {editId && <button onClick={() => { setEditId(null); setName(""); }}>Cancel</button>}
+              {editId && <button onClick={handleClear}>Cancel</button>}
             </td>
           </tr>
         </tbody>
       </table>
 
-      <table border="1" cellPadding="6">
+      {/* Data Table */}
+      <table
+        border="1"
+        cellPadding="6"
+        cellSpacing="0"
+        style={{ borderCollapse: "collapse" }}
+      >
         <thead>
-          <tr><th>District</th><th>Action</th></tr>
+          <tr>
+            <th>District</th>
+            <th>Actions</th>
+          </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
+          {districts.map((r) => (
             <tr key={r.districtId}>
               <td>{r.districtName}</td>
               <td>
-                <button onClick={() => { setName(r.districtName); setEditId(r.districtId); }}>Edit</button>
+                <button onClick={() => startEdit(r)}>Edit</button>
                 <button onClick={() => del(r.districtId)}>Delete</button>
               </td>
             </tr>

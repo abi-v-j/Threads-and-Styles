@@ -66,12 +66,274 @@ const adminSchema = new Schema(
 );
 const Admin = mongoose.model("Admin", adminSchema);
 
+// -------------------- ADMIN --------------------
+app.post("/admin", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    const newAdmin = await Admin.create({ name, email, password });
+    const results = await Admin.aggregate([
+      {
+        $project: {
+          adminId: "$_id",
+          name: 1,
+          email: 1,
+          password: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.status(201).json({ message: "Admin created successfully", results });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to create admin", error: err.message });
+  }
+});
+
+app.get("/admin", async (req, res) => {
+  try {
+    const results = await Admin.aggregate([
+      {
+        $project: {
+          adminId: "$_id",
+          name: 1,
+          email: 1,
+          password: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.status(200).json({ message: "Admins retrieved successfully", results });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to retrieve admins", error: err.message });
+  }
+});
+
+app.get("/admin/:id", async (req, res) => {
+  try {
+    const id = toObjectId(req.params.id);
+    if (!id) return res.status(400).json({ message: "Invalid admin ID" });
+    const results = await Admin.aggregate([
+      { $match: { _id: id } },
+      {
+        $project: {
+          adminId: "$_id",
+          name: 1,
+          email: 1,
+          password: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    if (!results.length)
+      return res.status(404).json({ message: "Admin not found" });
+    res
+      .status(200)
+      .json({ message: "Admin retrieved successfully", results: results[0] });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to retrieve admin", error: err.message });
+  }
+});
+
+app.put("/admin/:id", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    const updatedAdmin = await Admin.findByIdAndUpdate(
+      req.params.id,
+      { name, email, password },
+      { new: true, runValidators: true }
+    );
+    if (!updatedAdmin)
+      return res.status(404).json({ message: "Admin not found" });
+    const results = await Admin.aggregate([
+      {
+        $project: {
+          adminId: "$_id",
+          name: 1,
+          email: 1,
+          password: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.status(200).json({ message: "Admin updated successfully", results });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to update admin", error: err.message });
+  }
+});
+
+app.delete("/admin/:id", async (req, res) => {
+  try {
+    const deletedAdmin = await Admin.findByIdAndDelete(req.params.id);
+    if (!deletedAdmin)
+      return res.status(404).json({ message: "Admin not found" });
+    const results = await Admin.aggregate([
+      {
+        $project: {
+          adminId: "$_id",
+          name: 1,
+          email: 1,
+          password: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.status(200).json({ message: "Admin deleted successfully", results });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to delete admin", error: err.message });
+  }
+});
+
 // -------------------- 2️⃣ Districts --------------------
 const districtSchema = new Schema(
   { name: { type: String, required: true, trim: true } },
   { collection: "districts", timestamps: true }
 );
 const District = mongoose.model("District", districtSchema);
+
+// -------------------- DISTRICT --------------------
+app.post("/district", async (req, res) => {
+  try {
+    const { name } = req.body;
+    await District.create({ name });
+    const results = await District.aggregate([
+      {
+        $project: {
+          districtId: "$_id",
+          districtName: "$name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.status(201).json({ message: "District created", results });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to create district", error: err.message });
+  }
+});
+
+app.get("/district", async (req, res) => {
+  try {
+    const results = await District.aggregate([
+      {
+        $project: {
+          districtId: "$_id",
+          districtName: "$name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.status(200).json({ message: "Districts retrieved", results });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to retrieve districts", error: err.message });
+  }
+});
+
+app.get("/district/:id", async (req, res) => {
+  try {
+    const id = toObjectId(req.params.id);
+    if (!id) return res.status(400).json({ message: "Invalid district ID" });
+    const results = await District.aggregate([
+      { $match: { _id: id } },
+      {
+        $project: {
+          districtId: "$_id",
+          districtName: "$name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    if (!results.length)
+      return res.status(404).json({ message: "District not found" });
+    res
+      .status(200)
+      .json({ message: "District retrieved", results: results[0] });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to retrieve district", error: err.message });
+  }
+});
+
+app.put("/district/:id", async (req, res) => {
+  try {
+    const { name } = req.body;
+    const updated = await District.findByIdAndUpdate(
+      req.params.id,
+      { name },
+      { new: true, runValidators: true }
+    );
+    if (!updated)
+      return res.status(404).json({ message: "District not found" });
+    const results = await District.aggregate([
+      {
+        $project: {
+          districtId: "$_id",
+          districtName: "$name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.status(200).json({ message: "District updated", results });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to update district", error: err.message });
+  }
+});
+
+app.delete("/district/:id", async (req, res) => {
+  try {
+    const deleted = await District.findByIdAndDelete(req.params.id);
+    if (!deleted)
+      return res.status(404).json({ message: "District not found" });
+    const results = await District.aggregate([
+      {
+        $project: {
+          districtId: "$_id",
+          districtName: "$name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.status(200).json({ message: "District deleted", results });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to delete district", error: err.message });
+  }
+});
 
 // -------------------- 3️⃣ Places --------------------
 const placeSchema = new Schema(
@@ -87,12 +349,321 @@ const placeSchema = new Schema(
 );
 const Place = mongoose.model("Place", placeSchema);
 
+// ---------- PLACE ROUTES ----------
+// 1. CREATE
+app.post("/place", async (req, res) => {
+  try {
+    const { name, districtId } = req.body;
+    await Place.create({ name, districtId });
+    const results = await Place.aggregate([
+      {
+        $lookup: {
+          from: "districts",
+          localField: "districtId",
+          foreignField: "_id",
+          as: "district",
+        },
+      },
+      { $unwind: "$district" },
+      {
+        $project: {
+          placeId: "$_id",
+          placeName: "$name",
+          districtId: "$district._id",
+          districtName: "$district.name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.status(201).json({ message: "Place created", results });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to create place", error: err.message });
+  }
+});
+
+// 2. READ ALL
+app.get("/place", async (req, res) => {
+  try {
+    const results = await Place.aggregate([
+      {
+        $lookup: {
+          from: "districts",
+          localField: "districtId",
+          foreignField: "_id",
+          as: "district",
+        },
+      },
+      { $unwind: "$district" },
+      {
+        $project: {
+          placeId: "$_id",
+          placeName: "$name",
+          districtId: "$district._id",
+          districtName: "$district.name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.status(200).json({ message: "Places retrieved", results });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to retrieve places", error: err.message });
+  }
+});
+
+// 3. READ ONE
+app.get("/place/:id", async (req, res) => {
+  try {
+    const id = toObjectId(req.params.id);
+    if (!id) return res.status(400).json({ message: "Invalid place ID" });
+    const results = await Place.aggregate([
+      { $match: { _id: id } },
+      {
+        $lookup: {
+          from: "districts",
+          localField: "districtId",
+          foreignField: "_id",
+          as: "district",
+        },
+      },
+      { $unwind: "$district" },
+      {
+        $project: {
+          placeId: "$_id",
+          placeName: "$name",
+          districtId: "$district._id",
+          districtName: "$district.name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    if (!results.length)
+      return res.status(404).json({ message: "Place not found" });
+    res.status(200).json({ message: "Place retrieved", results: results[0] });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to retrieve place", error: err.message });
+  }
+});
+
+// 4. UPDATE
+app.put("/place/:id", async (req, res) => {
+  try {
+    const { name, districtId } = req.body;
+    const updated = await Place.findByIdAndUpdate(
+      req.params.id,
+      { name, districtId },
+      { new: true, runValidators: true }
+    );
+    if (!updated) return res.status(404).json({ message: "Place not found" });
+    const results = await Place.aggregate([
+      {
+        $lookup: {
+          from: "districts",
+          localField: "districtId",
+          foreignField: "_id",
+          as: "district",
+        },
+      },
+      { $unwind: "$district" },
+      {
+        $project: {
+          placeId: "$_id",
+          placeName: "$name",
+          districtId: "$district._id",
+          districtName: "$district.name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.status(200).json({ message: "Place updated", results });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to update place", error: err.message });
+  }
+});
+
+// 5. DELETE
+app.delete("/place/:id", async (req, res) => {
+  try {
+    const deleted = await Place.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Place not found" });
+    const results = await Place.aggregate([
+      {
+        $lookup: {
+          from: "districts",
+          localField: "districtId",
+          foreignField: "_id",
+          as: "district",
+        },
+      },
+      { $unwind: "$district" },
+      {
+        $project: {
+          placeId: "$_id",
+          placeName: "$name",
+          districtId: "$district._id",
+          districtName: "$district.name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.status(200).json({ message: "Place deleted", results });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to delete place", error: err.message });
+  }
+});
+
 // -------------------- 4️⃣ Types --------------------
 const typeSchema = new Schema(
   { name: { type: String, required: true, trim: true } },
   { collection: "types", timestamps: true }
 );
 const Type = mongoose.model("Type", typeSchema);
+
+// ---------- TYPE ROUTES ----------
+// 1. CREATE
+app.post("/type", async (req, res) => {
+  try {
+    const { name } = req.body;
+    await Type.create({ name });
+    const results = await Type.aggregate([
+      {
+        $project: {
+          typeId: "$_id",
+          typeName: "$name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.status(201).json({ message: "Type created", results });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to create type", error: err.message });
+  }
+});
+
+// 2. READ ALL
+app.get("/type", async (req, res) => {
+  try {
+    const results = await Type.aggregate([
+      {
+        $project: {
+          typeId: "$_id",
+          typeName: "$name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.status(200).json({ message: "Types retrieved", results });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to retrieve types", error: err.message });
+  }
+});
+
+// 3. READ ONE
+app.get("/type/:id", async (req, res) => {
+  try {
+    const id = toObjectId(req.params.id);
+    if (!id) return res.status(400).json({ message: "Invalid type ID" });
+    const results = await Type.aggregate([
+      { $match: { _id: id } },
+      {
+        $project: {
+          typeId: "$_id",
+          typeName: "$name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    if (!results.length)
+      return res.status(404).json({ message: "Type not found" });
+    res.status(200).json({ message: "Type retrieved", results: results[0] });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to retrieve type", error: err.message });
+  }
+});
+
+// 4. UPDATE
+app.put("/type/:id", async (req, res) => {
+  try {
+    const { name } = req.body;
+    const updated = await Type.findByIdAndUpdate(
+      req.params.id,
+      { name },
+      { new: true, runValidators: true }
+    );
+    if (!updated) return res.status(404).json({ message: "Type not found" });
+    const results = await Type.aggregate([
+      {
+        $project: {
+          typeId: "$_id",
+          typeName: "$name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.status(200).json({ message: "Type updated", results });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to update type", error: err.message });
+  }
+});
+
+// 5. DELETE
+app.delete("/type/:id", async (req, res) => {
+  try {
+    const deleted = await Type.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Type not found" });
+    const results = await Type.aggregate([
+      {
+        $project: {
+          typeId: "$_id",
+          typeName: "$name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.status(200).json({ message: "Type deleted", results });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to delete type", error: err.message });
+  }
+});
 
 // -------------------- 5️⃣ Categories --------------------
 const categorySchema = new Schema(
@@ -103,6 +674,192 @@ const categorySchema = new Schema(
   { collection: "categories", timestamps: true }
 );
 const Category = mongoose.model("Category", categorySchema);
+
+// ---------- CATEGORY ROUTES ----------
+// 1. CREATE
+app.post("/category", async (req, res) => {
+  try {
+    const { name, typeId } = req.body;
+    await Category.create({ name, typeId });
+    const results = await Category.aggregate([
+      {
+        $lookup: {
+          from: "types",
+          localField: "typeId",
+          foreignField: "_id",
+          as: "type",
+        },
+      },
+      { $unwind: "$type" },
+      {
+        $project: {
+          categoryId: "$_id",
+          categoryName: "$name",
+          typeId: "$type._id",
+          typeName: "$type.name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.status(201).json({ message: "Category created", results });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to create category", error: err.message });
+  }
+});
+
+// 2. READ ALL
+app.get("/category", async (req, res) => {
+  try {
+    const results = await Category.aggregate([
+      {
+        $lookup: {
+          from: "types",
+          localField: "typeId",
+          foreignField: "_id",
+          as: "type",
+        },
+      },
+      { $unwind: "$type" },
+      {
+        $project: {
+          categoryId: "$_id",
+          categoryName: "$name",
+          typeId: "$type._id",
+          typeName: "$type.name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.status(200).json({ message: "Categories retrieved", results });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to retrieve categories", error: err.message });
+  }
+});
+
+// 3. READ ONE
+app.get("/category/:id", async (req, res) => {
+  try {
+    const id = toObjectId(req.params.id);
+    if (!id) return res.status(400).json({ message: "Invalid category ID" });
+    const results = await Category.aggregate([
+      { $match: { _id: id } },
+      {
+        $lookup: {
+          from: "types",
+          localField: "typeId",
+          foreignField: "_id",
+          as: "type",
+        },
+      },
+      { $unwind: "$type" },
+      {
+        $project: {
+          categoryId: "$_id",
+          categoryName: "$name",
+          typeId: "$type._id",
+          typeName: "$type.name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    if (!results.length)
+      return res.status(404).json({ message: "Category not found" });
+    res
+      .status(200)
+      .json({ message: "Category retrieved", results: results[0] });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to retrieve category", error: err.message });
+  }
+});
+
+// 4. UPDATE
+app.put("/category/:id", async (req, res) => {
+  try {
+    const { name, typeId } = req.body;
+    const updated = await Category.findByIdAndUpdate(
+      req.params.id,
+      { name, typeId },
+      { new: true, runValidators: true }
+    );
+    if (!updated)
+      return res.status(404).json({ message: "Category not found" });
+    const results = await Category.aggregate([
+      {
+        $lookup: {
+          from: "types",
+          localField: "typeId",
+          foreignField: "_id",
+          as: "type",
+        },
+      },
+      { $unwind: "$type" },
+      {
+        $project: {
+          categoryId: "$_id",
+          categoryName: "$name",
+          typeId: "$type._id",
+          typeName: "$type.name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.status(200).json({ message: "Category updated", results });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to update category", error: err.message });
+  }
+});
+
+// 5. DELETE
+app.delete("/category/:id", async (req, res) => {
+  try {
+    const deleted = await Category.findByIdAndDelete(req.params.id);
+    if (!deleted)
+      return res.status(404).json({ message: "Category not found" });
+    const results = await Category.aggregate([
+      {
+        $lookup: {
+          from: "types",
+          localField: "typeId",
+          foreignField: "_id",
+          as: "type",
+        },
+      },
+      { $unwind: "$type" },
+      {
+        $project: {
+          categoryId: "$_id",
+          categoryName: "$name",
+          typeId: "$type._id",
+          typeName: "$type.name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.status(200).json({ message: "Category deleted", results });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to delete category", error: err.message });
+  }
+});
 
 // -------------------- 6️⃣ Subcategories --------------------
 const subcategorySchema = new Schema(
@@ -117,6 +874,164 @@ const subcategorySchema = new Schema(
   { collection: "subcategories", timestamps: true }
 );
 const Subcategory = mongoose.model("Subcategory", subcategorySchema);
+
+
+/*  NEW FILTER ROUTES  */
+// 1.  by-type    (returns every sub that lives under any category of the given type)
+app.get("/subcategoryByType/:typeId", async (req, res) => {
+  try {
+    const typeId = toObjectId(req.params.typeId);
+    if (!typeId) return res.status(400).json({ message: "Invalid type ID" });
+
+    const results = await Subcategory.aggregate([
+      /* 1. join category to get its typeId */
+      {
+        $lookup: {
+          from: "categories",
+          localField: "categoryId",
+          foreignField: "_id",
+          as: "cat",
+        },
+      },
+      { $unwind: "$cat" },
+      /* 2. keep only subs whose category belongs to the chosen type */
+      { $match: { "cat.typeId": typeId } },
+      /* 3. final shape */
+      {
+        $project: {
+          subcategoryId: "$_id",
+          subcategoryName: "$name",
+          categoryId: "$cat._id",
+          categoryName: "$cat.name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.status(200).json({ message: "Subcategories filtered by type", results });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to filter by type", error: err.message });
+  }
+});
+
+// 2.  by-category  (classic “give me every sub for this category”)
+app.get("/subcategoryByCategory/:categoryId", async (req, res) => {
+  try {
+    const categoryId = toObjectId(req.params.categoryId);
+    if (!categoryId) return res.status(400).json({ message: "Invalid category ID" });
+
+    const results = await Subcategory.aggregate([
+      { $match: { categoryId: categoryId } },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "categoryId",
+          foreignField: "_id",
+          as: "cat",
+        },
+      },
+      { $unwind: "$cat" },
+      {
+        $project: {
+          subcategoryId: "$_id",
+          subcategoryName: "$name",
+          categoryId: "$cat._id",
+          categoryName: "$cat.name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.status(200).json({ message: "Subcategories filtered by category", results });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to filter by category", error: err.message });
+  }
+});
+
+/*  ORIGINAL CRUD ROUTES (kept for completeness)  */
+// CREATE
+app.post("/subcategory", async (req, res) => {
+  try {
+    const { name, categoryId } = req.body;
+    await Subcategory.create({ name, categoryId });
+    const results = await Subcategory.aggregate([
+      { $lookup: { from: "categories", localField: "categoryId", foreignField: "_id", as: "cat" } },
+      { $unwind: "$cat" },
+      { $project: { subcategoryId: "$_id", subcategoryName: "$name", categoryId: "$cat._id", categoryName: "$cat.name", createdAt: 1, updatedAt: 1, _id: 0 } },
+    ]);
+    res.status(201).json({ message: "Subcategory created", results });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to create subcategory", error: err.message });
+  }
+});
+
+// READ ALL
+app.get("/subcategory", async (req, res) => {
+  try {
+    const results = await Subcategory.aggregate([
+      { $lookup: { from: "categories", localField: "categoryId", foreignField: "_id", as: "cat" } },
+      { $unwind: "$cat" },
+      { $project: { subcategoryId: "$_id", subcategoryName: "$name", categoryId: "$cat._id", categoryName: "$cat.name", createdAt: 1, updatedAt: 1, _id: 0 } },
+    ]);
+    res.status(200).json({ message: "Subcategories retrieved", results });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to retrieve subcategories", error: err.message });
+  }
+});
+
+// READ ONE
+app.get("/subcategory/:id", async (req, res) => {
+  try {
+    const id = toObjectId(req.params.id);
+    if (!id) return res.status(400).json({ message: "Invalid subcategory ID" });
+    const results = await Subcategory.aggregate([
+      { $match: { _id: id } },
+      { $lookup: { from: "categories", localField: "categoryId", foreignField: "_id", as: "cat" } },
+      { $unwind: "$cat" },
+      { $project: { subcategoryId: "$_id", subcategoryName: "$name", categoryId: "$cat._id", categoryName: "$cat.name", createdAt: 1, updatedAt: 1, _id: 0 } },
+    ]);
+    if (!results.length) return res.status(404).json({ message: "Subcategory not found" });
+    res.status(200).json({ message: "Subcategory retrieved", results: results[0] });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to retrieve subcategory", error: err.message });
+  }
+});
+
+// UPDATE
+app.put("/subcategory/:id", async (req, res) => {
+  try {
+    const { name, categoryId } = req.body;
+    const updated = await Subcategory.findByIdAndUpdate(req.params.id, { name, categoryId }, { new: true, runValidators: true });
+    if (!updated) return res.status(404).json({ message: "Subcategory not found" });
+    const results = await Subcategory.aggregate([
+      { $lookup: { from: "categories", localField: "categoryId", foreignField: "_id", as: "cat" } },
+      { $unwind: "$cat" },
+      { $project: { subcategoryId: "$_id", subcategoryName: "$name", categoryId: "$cat._id", categoryName: "$cat.name", createdAt: 1, updatedAt: 1, _id: 0 } },
+    ]);
+    res.status(200).json({ message: "Subcategory updated", results });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update subcategory", error: err.message });
+  }
+});
+
+// DELETE
+app.delete("/subcategory/:id", async (req, res) => {
+  try {
+    const deleted = await Subcategory.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Subcategory not found" });
+    const results = await Subcategory.aggregate([
+      { $lookup: { from: "categories", localField: "categoryId", foreignField: "_id", as: "cat" } },
+      { $unwind: "$cat" },
+      { $project: { subcategoryId: "$_id", subcategoryName: "$name", categoryId: "$cat._id", categoryName: "$cat.name", createdAt: 1, updatedAt: 1, _id: 0 } },
+    ]);
+    res.status(200).json({ message: "Subcategory deleted", results });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to delete subcategory", error: err.message });
+  }
+});
+
 
 // -------------------- 7️⃣ Brands --------------------
 const brandSchema = new Schema(
@@ -322,787 +1237,6 @@ const complaintSchema = new Schema(
   { collection: "complaints", timestamps: true }
 );
 const Complaint = mongoose.model("Complaint", complaintSchema);
-
-// -------------------- ADMIN --------------------
-app.post("/admin", async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-    await Admin.create({ name, email, password });
-    const data = await Admin.aggregate([
-      {
-        $project: {
-          adminId: "$_id",
-          name: 1,
-          email: 1,
-          password: 1,
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.get("/admin", async (req, res) => {
-  try {
-    const data = await Admin.aggregate([
-      {
-        $project: {
-          adminId: "$_id",
-          name: 1,
-          email: 1,
-          password: 1,
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.get("/admin/:id", async (req, res) => {
-  try {
-    const id = toObjectId(req.params.id);
-    if (!id) return res.status(400).json({ message: "Invalid id" });
-    const data = await Admin.aggregate([
-      { $match: { _id: id } },
-      {
-        $project: {
-          adminId: "$_id",
-          name: 1,
-          email: 1,
-          password: 1,
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    if (!data.length) return res.status(404).json({ message: "Not found" });
-    res.json({ data: data[0] });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.put("/admin/:id", async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-    await Admin.findByIdAndUpdate(req.params.id, { name, email, password });
-    const data = await Admin.aggregate([
-      {
-        $project: {
-          adminId: "$_id",
-          name: 1,
-          email: 1,
-          password: 1,
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.delete("/admin/:id", async (req, res) => {
-  try {
-    await Admin.findByIdAndDelete(req.params.id);
-    const data = await Admin.aggregate([
-      {
-        $project: {
-          adminId: "$_id",
-          name: 1,
-          email: 1,
-          password: 1,
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// -------------------- DISTRICT --------------------
-app.post("/district", async (req, res) => {
-  try {
-    const { name } = req.body;
-    await District.create({ name });
-    const data = await District.aggregate([
-      {
-        $project: {
-          districtId: "$_id",
-          districtName: "$name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.get("/district", async (req, res) => {
-  try {
-    const data = await District.aggregate([
-      {
-        $project: {
-          districtId: "$_id",
-          districtName: "$name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.get("/district/:id", async (req, res) => {
-  try {
-    const id = toObjectId(req.params.id);
-    if (!id) return res.status(400).json({ message: "Invalid id" });
-    const data = await District.aggregate([
-      { $match: { _id: id } },
-      {
-        $project: {
-          districtId: "$_id",
-          districtName: "$name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    if (!data.length) return res.status(404).json({ message: "Not found" });
-    res.json({ data: data[0] });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.put("/district/:id", async (req, res) => {
-  try {
-    const { name } = req.body;
-    await District.findByIdAndUpdate(req.params.id, { name });
-    const data = await District.aggregate([
-      {
-        $project: {
-          districtId: "$_id",
-          districtName: "$name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.delete("/district/:id", async (req, res) => {
-  try {
-    await District.findByIdAndDelete(req.params.id);
-    const data = await District.aggregate([
-      {
-        $project: {
-          districtId: "$_id",
-          districtName: "$name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// -------------------- PLACE --------------------
-app.post("/place", async (req, res) => {
-  try {
-    const { name, districtId } = req.body;
-    await Place.create({ name, districtId });
-    const data = await Place.aggregate([
-      {
-        $lookup: {
-          from: "districts",
-          localField: "districtId",
-          foreignField: "_id",
-          as: "district",
-        },
-      },
-      { $unwind: { path: "$district", preserveNullAndEmptyArrays: true } },
-      {
-        $project: {
-          placeId: "$_id",
-          placeName: "$name",
-          districtId: "$district._id",
-          districtName: "$district.name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.get("/place", async (req, res) => {
-  try {
-    const data = await Place.aggregate([
-      {
-        $lookup: {
-          from: "districts",
-          localField: "districtId",
-          foreignField: "_id",
-          as: "district",
-        },
-      },
-      { $unwind: { path: "$district", preserveNullAndEmptyArrays: true } },
-      {
-        $project: {
-          placeId: "$_id",
-          placeName: "$name",
-          districtId: "$district._id",
-          districtName: "$district.name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.get("/place/:id", async (req, res) => {
-  try {
-    const id = toObjectId(req.params.id);
-    if (!id) return res.status(400).json({ message: "Invalid id" });
-    const data = await Place.aggregate([
-      { $match: { _id: id } },
-      {
-        $lookup: {
-          from: "districts",
-          localField: "districtId",
-          foreignField: "_id",
-          as: "district",
-        },
-      },
-      { $unwind: { path: "$district", preserveNullAndEmptyArrays: true } },
-      {
-        $project: {
-          placeId: "$_id",
-          placeName: "$name",
-          districtId: "$district._id",
-          districtName: "$district.name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    if (!data.length) return res.status(404).json({ message: "Not found" });
-    res.json({ data: data[0] });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.put("/place/:id", async (req, res) => {
-  try {
-    const { name, districtId } = req.body;
-    await Place.findByIdAndUpdate(req.params.id, { name, districtId });
-    const data = await Place.aggregate([
-      {
-        $lookup: {
-          from: "districts",
-          localField: "districtId",
-          foreignField: "_id",
-          as: "district",
-        },
-      },
-      { $unwind: { path: "$district", preserveNullAndEmptyArrays: true } },
-      {
-        $project: {
-          placeId: "$_id",
-          placeName: "$name",
-          districtId: "$district._id",
-          districtName: "$district.name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.delete("/place/:id", async (req, res) => {
-  try {
-    await Place.findByIdAndDelete(req.params.id);
-    const data = await Place.aggregate([
-      {
-        $lookup: {
-          from: "districts",
-          localField: "districtId",
-          foreignField: "_id",
-          as: "district",
-        },
-      },
-      { $unwind: { path: "$district", preserveNullAndEmptyArrays: true } },
-      {
-        $project: {
-          placeId: "$_id",
-          placeName: "$name",
-          districtId: "$district._id",
-          districtName: "$district.name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// -------------------- TYPE --------------------
-app.post("/type", async (req, res) => {
-  try {
-    const { name } = req.body;
-    await Type.create({ name });
-    const data = await Type.aggregate([
-      {
-        $project: {
-          typeId: "$_id",
-          typeName: "$name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.get("/type", async (req, res) => {
-  try {
-    const data = await Type.aggregate([
-      {
-        $project: {
-          typeId: "$_id",
-          typeName: "$name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.get("/type/:id", async (req, res) => {
-  try {
-    const id = toObjectId(req.params.id);
-    if (!id) return res.status(400).json({ message: "Invalid id" });
-    const data = await Type.aggregate([
-      { $match: { _id: id } },
-      {
-        $project: {
-          typeId: "$_id",
-          typeName: "$name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    if (!data.length) return res.status(404).json({ message: "Not found" });
-    res.json({ data: data[0] });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.put("/type/:id", async (req, res) => {
-  try {
-    const { name } = req.body;
-    await Type.findByIdAndUpdate(req.params.id, { name });
-    const data = await Type.aggregate([
-      {
-        $project: {
-          typeId: "$_id",
-          typeName: "$name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.delete("/type/:id", async (req, res) => {
-  try {
-    await Type.findByIdAndDelete(req.params.id);
-    const data = await Type.aggregate([
-      {
-        $project: {
-          typeId: "$_id",
-          typeName: "$name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// -------------------- CATEGORY --------------------
-app.post("/category", async (req, res) => {
-  try {
-    const { name, typeId } = req.body;
-    await Category.create({ name, typeId });
-    const data = await Category.aggregate([
-      {
-        $lookup: {
-          from: "types",
-          localField: "typeId",
-          foreignField: "_id",
-          as: "type",
-        },
-      },
-      { $unwind: { path: "$type", preserveNullAndEmptyArrays: true } },
-      {
-        $project: {
-          categoryId: "$_id",
-          categoryName: "$name",
-          typeId: "$type._id",
-          typeName: "$type.name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.get("/category", async (req, res) => {
-  try {
-    const data = await Category.aggregate([
-      {
-        $lookup: {
-          from: "types",
-          localField: "typeId",
-          foreignField: "_id",
-          as: "type",
-        },
-      },
-      { $unwind: { path: "$type", preserveNullAndEmptyArrays: true } },
-      {
-        $project: {
-          categoryId: "$_id",
-          categoryName: "$name",
-          typeId: "$type._id",
-          typeName: "$type.name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.get("/category/:id", async (req, res) => {
-  try {
-    const id = toObjectId(req.params.id);
-    if (!id) return res.status(400).json({ message: "Invalid id" });
-    const data = await Category.aggregate([
-      { $match: { _id: id } },
-      {
-        $lookup: {
-          from: "types",
-          localField: "typeId",
-          foreignField: "_id",
-          as: "type",
-        },
-      },
-      { $unwind: { path: "$type", preserveNullAndEmptyArrays: true } },
-      {
-        $project: {
-          categoryId: "$_id",
-          categoryName: "$name",
-          typeId: "$type._id",
-          typeName: "$type.name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    if (!data.length) return res.status(404).json({ message: "Not found" });
-    res.json({ data: data[0] });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.put("/category/:id", async (req, res) => {
-  try {
-    const { name, typeId } = req.body;
-    await Category.findByIdAndUpdate(req.params.id, { name, typeId });
-    const data = await Category.aggregate([
-      {
-        $lookup: {
-          from: "types",
-          localField: "typeId",
-          foreignField: "_id",
-          as: "type",
-        },
-      },
-      { $unwind: { path: "$type", preserveNullAndEmptyArrays: true } },
-      {
-        $project: {
-          categoryId: "$_id",
-          categoryName: "$name",
-          typeId: "$type._id",
-          typeName: "$type.name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.delete("/category/:id", async (req, res) => {
-  try {
-    await Category.findByIdAndDelete(req.params.id);
-    const data = await Category.aggregate([
-      {
-        $lookup: {
-          from: "types",
-          localField: "typeId",
-          foreignField: "_id",
-          as: "type",
-        },
-      },
-      { $unwind: { path: "$type", preserveNullAndEmptyArrays: true } },
-      {
-        $project: {
-          categoryId: "$_id",
-          categoryName: "$name",
-          typeId: "$type._id",
-          typeName: "$type.name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// -------------------- SUBCATEGORY --------------------
-app.post("/subcategory", async (req, res) => {
-  try {
-    const { name, categoryId } = req.body;
-    await Subcategory.create({ name, categoryId });
-    const data = await Subcategory.aggregate([
-      {
-        $lookup: {
-          from: "categories",
-          localField: "categoryId",
-          foreignField: "_id",
-          as: "category",
-        },
-      },
-      { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
-      {
-        $project: {
-          subcategoryId: "$_id",
-          subcategoryName: "$name",
-          categoryId: "$category._id",
-          categoryName: "$category.name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.get("/subcategory", async (req, res) => {
-  try {
-    const data = await Subcategory.aggregate([
-      {
-        $lookup: {
-          from: "categories",
-          localField: "categoryId",
-          foreignField: "_id",
-          as: "category",
-        },
-      },
-      { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
-      {
-        $project: {
-          subcategoryId: "$_id",
-          subcategoryName: "$name",
-          categoryId: "$category._id",
-          categoryName: "$category.name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.get("/subcategory/:id", async (req, res) => {
-  try {
-    const id = toObjectId(req.params.id);
-    if (!id) return res.status(400).json({ message: "Invalid id" });
-    const data = await Subcategory.aggregate([
-      { $match: { _id: id } },
-      {
-        $lookup: {
-          from: "categories",
-          localField: "categoryId",
-          foreignField: "_id",
-          as: "category",
-        },
-      },
-      { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
-      {
-        $project: {
-          subcategoryId: "$_id",
-          subcategoryName: "$name",
-          categoryId: "$category._id",
-          categoryName: "$category.name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    if (!data.length) return res.status(404).json({ message: "Not found" });
-    res.json({ data: data[0] });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.put("/subcategory/:id", async (req, res) => {
-  try {
-    const { name, categoryId } = req.body;
-    await Subcategory.findByIdAndUpdate(req.params.id, { name, categoryId });
-    const data = await Subcategory.aggregate([
-      {
-        $lookup: {
-          from: "categories",
-          localField: "categoryId",
-          foreignField: "_id",
-          as: "category",
-        },
-      },
-      { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
-      {
-        $project: {
-          subcategoryId: "$_id",
-          subcategoryName: "$name",
-          categoryId: "$category._id",
-          categoryName: "$category.name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.delete("/subcategory/:id", async (req, res) => {
-  try {
-    await Subcategory.findByIdAndDelete(req.params.id);
-    const data = await Subcategory.aggregate([
-      {
-        $lookup: {
-          from: "categories",
-          localField: "categoryId",
-          foreignField: "_id",
-          as: "category",
-        },
-      },
-      { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
-      {
-        $project: {
-          subcategoryId: "$_id",
-          subcategoryName: "$name",
-          categoryId: "$category._id",
-          categoryName: "$category.name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 // -------------------- BRAND --------------------
 app.post("/brand", async (req, res) => {
@@ -2509,6 +2643,105 @@ app.get("/product", async (req, res) => {
   }
 });
 
+// GET /product/card
+app.get("/productCard", async (req, res) => {
+  try {
+    const cards = await Product.aggregate([
+      /* 1.  basic joins (brand, category, type, seller) – keep names */
+      {
+        $lookup: {
+          from: "subcategories",
+          localField: "subcategoryId",
+          foreignField: "_id",
+          as: "subcat",
+        },
+      },
+      { $unwind: { path: "$subcat", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "subcat.categoryId",
+          foreignField: "_id",
+          as: "cat",
+        },
+      },
+      { $unwind: { path: "$cat", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "types",
+          localField: "cat.typeId",
+          foreignField: "_id",
+          as: "typ",
+        },
+      },
+      { $unwind: { path: "$typ", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "brands",
+          localField: "brandId",
+          foreignField: "_id",
+          as: "brand",
+        },
+      },
+      { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "sellers",
+          localField: "sellerId",
+          foreignField: "_id",
+          as: "seller",
+        },
+      },
+      { $unwind: { path: "$seller", preserveNullAndEmptyArrays: true } },
+
+      /* 2.  first colour → first gallery image only */
+      {
+        $lookup: {
+          from: "productColors",
+          localField: "_id",
+          foreignField: "productId",
+          as: "pc",
+        },
+      },
+      { $limit: 1 }, // keep only first productColor row
+      {
+        $lookup: {
+          from: "galleries",
+          localField: "pc._id",
+          foreignField: "productColorId",
+          as: "gallery",
+        },
+      },
+      { $limit: 1 }, // keep only first gallery row
+
+      /* 3.  shape final object */
+      {
+        $project: {
+          _id: 0,
+          productId: "$_id",
+          name: 1,
+          details: 1,
+          status: 1,
+          brandName: { $ifNull: ["$brand.name", null] },
+          categoryName: { $ifNull: ["$cat.name", null] },
+          typeName: { $ifNull: ["$typ.name", null] },
+          sellerName: { $ifNull: ["$seller.name", null] },
+          image: {
+            $cond: [
+              { $gt: [{ $size: "$gallery" }, 0] },
+              { $concat: ["/uploads", { $arrayElemAt: ["$gallery.file", 0] }] },
+              null,
+            ],
+          },
+        },
+      },
+    ]);
+
+    res.json({ data: cards });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 /* ------------------------------------------------
    1.  colours that exist for a specific product
 ------------------------------------------------ */
@@ -2767,6 +3000,165 @@ app.get("/product/:id", async (req, res) => {
     ]);
     if (!data.length) return res.status(404).json({ message: "Not found" });
     res.json({ data: data[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 2.  single product full details -------------------------------------
+app.get("/productOne/:id", async (req, res) => {
+  try {
+    const id = toObjectId(req.params.id);
+    if (!id) return res.status(400).json({ message: "Invalid product id" });
+
+    const doc = await Product.aggregate([
+      { $match: { _id: id } },
+
+      /* brand / category / type / seller */
+      {
+        $lookup: {
+          from: "subcategories",
+          localField: "subcategoryId",
+          foreignField: "_id",
+          as: "subcat",
+        },
+      },
+      { $unwind: { path: "$subcat", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "subcat.categoryId",
+          foreignField: "_id",
+          as: "cat",
+        },
+      },
+      { $unwind: { path: "$cat", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "types",
+          localField: "cat.typeId",
+          foreignField: "_id",
+          as: "typ",
+        },
+      },
+      { $unwind: { path: "$typ", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "brands",
+          localField: "brandId",
+          foreignField: "_id",
+          as: "brand",
+        },
+      },
+      { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "sellers",
+          localField: "sellerId",
+          foreignField: "_id",
+          as: "seller",
+        },
+      },
+      { $unwind: { path: "$seller", preserveNullAndEmptyArrays: true } },
+
+      /* colours → sizes → stock + gallery */
+      {
+        $lookup: {
+          from: "productColors",
+          localField: "_id",
+          foreignField: "productId",
+          as: "colours",
+        },
+      },
+      {
+        $unwind: { path: "$colours", preserveNullAndEmptyArrays: true },
+      },
+      {
+        $lookup: {
+          from: "colors",
+          localField: "colours.colorId",
+          foreignField: "_id",
+          as: "colours.color",
+        },
+      },
+      { $unwind: { path: "$colours.color", preserveNullAndEmptyArrays: true } },
+
+      /* sizes for each colour */
+      {
+        $lookup: {
+          from: "productSizes",
+          localField: "colours._id",
+          foreignField: "productColorId",
+          as: "colours.sizes",
+        },
+      },
+      { $unwind: { path: "$colours.sizes", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "sizes",
+          localField: "colours.sizes.sizeId",
+          foreignField: "_id",
+          as: "colours.sizes.size",
+        },
+      },
+      {
+        $unwind: {
+          path: "$colours.sizes.size",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+
+      /* stock per size */
+      {
+        $lookup: {
+          from: "stocks",
+          localField: "colours.sizes._id",
+          foreignField: "productSizeId",
+          as: "colours.sizes.stocks",
+        },
+      },
+
+      /* gallery per colour */
+      {
+        $lookup: {
+          from: "galleries",
+          localField: "colours._id",
+          foreignField: "productColorId",
+          as: "colours.gallery",
+        },
+      },
+
+      /* group back to single product */
+      {
+        $group: {
+          _id: "$_id",
+          productId: { $first: "$_id" },
+          name: { $first: "$name" },
+          details: { $first: "$details" },
+          status: { $first: "$status" },
+          brandName: { $first: "$brand.name" },
+          typeName: { $first: "$typ.name" },
+          categoryName: { $first: "$cat.name" },
+          subcategoryName: { $first: "$subcat.name" },
+          sellerName: { $first: "$seller.name" },
+          createdAt: { $first: "$createdAt" },
+          updatedAt: { $first: "$updatedAt" },
+          colours: {
+            $push: {
+              colorId: "$colours.color._id",
+              colorName: "$colours.color.name",
+              sizes: "$colours.sizes",
+              gallery: "$colours.gallery",
+            },
+          },
+        },
+      },
+      { $project: { _id: 0 } },
+    ]);
+
+    if (!doc.length)
+      return res.status(404).json({ message: "Product not found" });
+    res.json({ data: doc[0] });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -3880,7 +4272,20 @@ app.put("/complaint/:id", async (req, res) => {
 app.delete("/complaint/:id", async (req, res) => {
   try {
     await Complaint.findByIdAndDelete(req.params.id);
-    res.json({ message: "Deleted" });
+    const results = await Admin.aggregate([
+      {
+        $project: {
+          adminId: "$_id",
+          name: 1,
+          email: 1,
+          password: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    ]);
+    res.json({ message: "Deleted", results });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

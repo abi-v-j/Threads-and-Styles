@@ -2,55 +2,95 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 
 const Type = () => {
-  const [rows, setRows] = useState([]);
+  const [types, setTypes] = useState([]);
   const [name, setName] = useState("");
   const [editId, setEditId] = useState(null);
 
-  const load = async () => {
+  const fetchTypes = async () => {
     const res = await axios.get("http://localhost:5000/type");
-    setRows(res.data.data);
+    setTypes(res.data.results);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    fetchTypes();
+  }, []);
 
   const save = async () => {
+    const payload = { name };
+    let res;
     if (editId) {
-      await axios.put(`http://localhost:5000/type/${editId}`, { name });
+      res = await axios.put(`http://localhost:5000/type/${editId}`, payload);
     } else {
-      await axios.post("http://localhost:5000/type", { name });
+      res = await axios.post("http://localhost:5000/type", payload);
     }
-    setName(""); setEditId(null); load();
+    setTypes(res.data.results);
+    setName("");
+    setEditId(null);
   };
 
   const del = async (id) => {
-    await axios.delete(`http://localhost:5000/type/${id}`);
-    load();
+    const res = await axios.delete(`http://localhost:5000/type/${id}`);
+    setTypes(res.data.results);
+  };
+
+  const startEdit = (r) => {
+    setName(r.typeName);
+    setEditId(r.typeId);
+  };
+
+  const handleClear = () => {
+    setName("");
+    setEditId(null);
   };
 
   return (
     <>
-      <table border="1" cellPadding="6">
+      {/* Form Table */}
+      <table
+        border="1"
+        cellPadding="6"
+        cellSpacing="0"
+        style={{ borderCollapse: "collapse", marginBottom: "2rem" }}
+      >
         <tbody>
           <tr>
-            <td><input placeholder="Type name" value={name} onChange={(e) => setName(e.target.value)} /></td>
+            <td>Type</td>
             <td>
+              <input
+                placeholder="Type name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </td>
+          </tr>
+          <tr>
+            <td colSpan="2" style={{ textAlign: "center" }}>
               <button onClick={save}>{editId ? "Update" : "Save"}</button>
-              {editId && <button onClick={() => { setEditId(null); setName(""); }}>Cancel</button>}
+              {editId && <button onClick={handleClear}>Cancel</button>}
             </td>
           </tr>
         </tbody>
       </table>
 
-      <table border="1" cellPadding="6">
+      {/* Data Table */}
+      <table
+        border="1"
+        cellPadding="6"
+        cellSpacing="0"
+        style={{ borderCollapse: "collapse" }}
+      >
         <thead>
-          <tr><th>Type</th><th>Action</th></tr>
+          <tr>
+            <th>Type</th>
+            <th>Actions</th>
+          </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
+          {types.map((r) => (
             <tr key={r.typeId}>
               <td>{r.typeName}</td>
               <td>
-                <button onClick={() => { setName(r.typeName); setEditId(r.typeId); }}>Edit</button>
+                <button onClick={() => startEdit(r)}>Edit</button>
                 <button onClick={() => del(r.typeId)}>Delete</button>
               </td>
             </tr>

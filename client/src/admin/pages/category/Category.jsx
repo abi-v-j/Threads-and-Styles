@@ -2,72 +2,121 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 
 const Category = () => {
-  const [rows, setRows] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [types, setTypes] = useState([]);
   const [name, setName] = useState("");
   const [typeId, setTypeId] = useState("");
   const [editId, setEditId] = useState(null);
 
-  const load = async () => {
+  const fetchCategories = async () => {
     const res = await axios.get("http://localhost:5000/category");
-    setRows(res.data.data);
+    setCategories(res.data.results);
   };
 
-  const loadTypes = async () => {
+  const fetchTypes = async () => {
     const res = await axios.get("http://localhost:5000/type");
-    setTypes(res.data.data);
+    setTypes(res.data.results);
   };
 
-  useEffect(() => { load(); loadTypes(); }, []);
+  useEffect(() => { fetchCategories(); fetchTypes(); }, []);
 
   const save = async () => {
     const payload = { name, typeId };
+    let res;
     if (editId) {
-      await axios.put(`http://localhost:5000/category/${editId}`, payload);
+      res = await axios.put(`http://localhost:5000/category/${editId}`, payload);
     } else {
-      await axios.post("http://localhost:5000/category", payload);
+      res = await axios.post("http://localhost:5000/category", payload);
     }
-    setName(""); setTypeId(""); setEditId(null); load();
+    setCategories(res.data.results);
+    setName("");
+    setTypeId("");
+    setEditId(null);
   };
 
   const del = async (id) => {
-    await axios.delete(`http://localhost:5000/category/${id}`);
-    load();
+    const res = await axios.delete(`http://localhost:5000/category/${id}`);
+    setCategories(res.data.results);
+  };
+
+  const startEdit = (r) => {
+    setName(r.categoryName);
+    setTypeId(r.typeId);
+    setEditId(r.categoryId);
+  };
+
+  const handleClear = () => {
+    setName("");
+    setTypeId("");
+    setEditId(null);
   };
 
   return (
     <>
-      <table border="1" cellPadding="6">
+      {/* Form Table */}
+      <table
+        border="1"
+        cellPadding="6"
+        cellSpacing="0"
+        style={{ borderCollapse: "collapse", marginBottom: "2rem" }}
+      >
         <tbody>
           <tr>
-            <td><input placeholder="Category name" value={name} onChange={(e) => setName(e.target.value)} /></td>
+            <td>Category</td>
             <td>
-              <select value={typeId} onChange={(e) => setTypeId(e.target.value)}>
+              <input
+                placeholder="Category name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </td>
+          </tr>
+          <tr>
+            <td>Type</td>
+            <td>
+              <select
+                value={typeId}
+                onChange={(e) => setTypeId(e.target.value)}
+              >
                 <option value="">-- select type --</option>
                 {types.map((t) => (
-                  <option key={t.typeId} value={t.typeId}>{t.typeName}</option>
+                  <option key={t.typeId} value={t.typeId}>
+                    {t.typeName}
+                  </option>
                 ))}
               </select>
             </td>
-            <td>
+          </tr>
+          <tr>
+            <td colSpan="2" style={{ textAlign: "center" }}>
               <button onClick={save}>{editId ? "Update" : "Save"}</button>
-              {editId && <button onClick={() => { setEditId(null); setName(""); setTypeId(""); }}>Cancel</button>}
+              {editId && <button onClick={handleClear}>Cancel</button>}
             </td>
           </tr>
         </tbody>
       </table>
 
-      <table border="1" cellPadding="6">
+      {/* Data Table */}
+      <table
+        border="1"
+        cellPadding="6"
+        cellSpacing="0"
+        style={{ borderCollapse: "collapse" }}
+      >
         <thead>
-          <tr><th>Category</th><th>Type</th><th>Action</th></tr>
+          <tr>
+            <th>Category</th>
+            <th>Type</th>
+            <th>Actions</th>
+          </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
+          {categories.map((r) => (
             <tr key={r.categoryId}>
               <td>{r.categoryName}</td>
               <td>{r.typeName}</td>
               <td>
-                <button onClick={() => { setName(r.categoryName); setTypeId(r.typeId); setEditId(r.categoryId); }}>Edit</button>
+                <button onClick={() => startEdit(r)}>Edit</button>
                 <button onClick={() => del(r.categoryId)}>Delete</button>
               </td>
             </tr>

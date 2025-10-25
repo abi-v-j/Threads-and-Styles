@@ -2,72 +2,124 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 
 const Place = () => {
-  const [rows, setRows] = useState([]);
+  const [places, setPlaces] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [name, setName] = useState("");
   const [districtId, setDistrictId] = useState("");
   const [editId, setEditId] = useState(null);
 
-  const load = async () => {
+  const fetchPlaces = async () => {
     const res = await axios.get("http://localhost:5000/place");
-    setRows(res.data.data);
+    setPlaces(res.data.results);
   };
 
-  const loadDistricts = async () => {
+  const fetchDistricts = async () => {
     const res = await axios.get("http://localhost:5000/district");
-    setDistricts(res.data.data);
+    setDistricts(res.data.results);
   };
 
-  useEffect(() => { load(); loadDistricts(); }, []);
+  useEffect(() => {
+    fetchPlaces();
+    fetchDistricts();
+  }, []);
 
   const save = async () => {
     const payload = { name, districtId };
+    let res;
     if (editId) {
-      await axios.put(`http://localhost:5000/place/${editId}`, payload);
+      res = await axios.put(`http://localhost:5000/place/${editId}`, payload);
     } else {
-      await axios.post("http://localhost:5000/place", payload);
+      res = await axios.post("http://localhost:5000/place", payload);
     }
-    setName(""); setDistrictId(""); setEditId(null); load();
+    setPlaces(res.data.results);
+    setName("");
+    setDistrictId("");
+    setEditId(null);
   };
 
   const del = async (id) => {
-    await axios.delete(`http://localhost:5000/place/${id}`);
-    load();
+    const res = await axios.delete(`http://localhost:5000/place/${id}`);
+    setPlaces(res.data.results);
+  };
+
+  const startEdit = (r) => {
+    setName(r.placeName);
+    setDistrictId(r.districtId);
+    setEditId(r.placeId);
+  };
+
+  const handleClear = () => {
+    setName("");
+    setDistrictId("");
+    setEditId(null);
   };
 
   return (
     <>
-      <table border="1" cellPadding="6">
+      {/* Form Table */}
+      <table
+        border="1"
+        cellPadding="6"
+        cellSpacing="0"
+        style={{ borderCollapse: "collapse", marginBottom: "2rem" }}
+      >
         <tbody>
           <tr>
-            <td><input placeholder="Place name" value={name} onChange={(e) => setName(e.target.value)} /></td>
+            <td>Place</td>
             <td>
-              <select value={districtId} onChange={(e) => setDistrictId(e.target.value)}>
+              <input
+                placeholder="Place name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </td>
+          </tr>
+          <tr>
+            <td>District</td>
+            <td>
+              <select
+                value={districtId}
+                onChange={(e) => setDistrictId(e.target.value)}
+              >
                 <option value="">-- select district --</option>
                 {districts.map((d) => (
-                  <option key={d.districtId} value={d.districtId}>{d.districtName}</option>
+                  <option key={d.districtId} value={d.districtId}>
+                    {d.districtName}
+                  </option>
                 ))}
               </select>
             </td>
-            <td>
+          </tr>
+          <tr>
+            <td colSpan="2" style={{ textAlign: "center" }}>
               <button onClick={save}>{editId ? "Update" : "Save"}</button>
-              {editId && <button onClick={() => { setEditId(null); setName(""); setDistrictId(""); }}>Cancel</button>}
+              {editId && <button onClick={handleClear}>Cancel</button>}
             </td>
           </tr>
         </tbody>
       </table>
 
-      <table border="1" cellPadding="6">
+      {/* Data Table */}
+      <table
+        border="1"
+        cellPadding="6"
+        cellSpacing="0"
+        style={{ borderCollapse: "collapse" }}
+      >
         <thead>
-          <tr><th>Place</th><th>District</th><th>Action</th></tr>
+          <tr>
+            <th>Place</th>
+            <th>District</th>
+            <th>Actions</th>
+          </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
+          {places.map((r) => (
             <tr key={r.placeId}>
               <td>{r.placeName}</td>
               <td>{r.districtName}</td>
               <td>
-                <button onClick={() => { setName(r.placeName); setDistrictId(r.districtId); setEditId(r.placeId); }}>Edit</button>
+                <button onClick={() => startEdit(r)}>Edit</button>
                 <button onClick={() => del(r.placeId)}>Delete</button>
               </td>
             </tr>
