@@ -61,17 +61,7 @@ const Category = () => {
         style={{ borderCollapse: "collapse", marginBottom: "2rem" }}
       >
         <tbody>
-          <tr>
-            <td>Category</td>
-            <td>
-              <input
-                placeholder="Category name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </td>
-          </tr>
-          <tr>
+           <tr>
             <td>Type</td>
             <td>
               <select
@@ -87,6 +77,17 @@ const Category = () => {
               </select>
             </td>
           </tr>
+          <tr>
+            <td>Category</td>
+            <td>
+              <input
+                placeholder="Category name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </td>
+          </tr>
+         
           <tr>
             <td colSpan="2" style={{ textAlign: "center" }}>
               <button onClick={save}>{editId ? "Update" : "Save"}</button>

@@ -17,9 +17,11 @@ const Subcategory = () => {
   };
 
   const fetchCategories = async (id) => {
-    setCategoryId(id);
-    const res = await axios.get(`http://localhost:5000/subcategoryByCategory/${id}`);
+    setTypeId(id);
+    const res = await axios.get(`http://localhost:5000/categoryByType/${id}`);
     setCategories(res.data.results);
+    console.log(res.data.results);
+    
   };
 
   const fetchSubcategories = async () => {
@@ -84,7 +86,7 @@ const Subcategory = () => {
               <select
                 value={typeId}
                 onChange={(e) => {
-                  setTypeId(e.target.value);
+                  fetchCategories(e.target.value);
                   setCategoryId("");
                 }}
               >
@@ -102,7 +104,7 @@ const Subcategory = () => {
             <td>
               <select
                 value={categoryId}
-                onChange={(e) => fetchCategories(e.target.value)}
+                onChange={(e) => setCategoryId(e.target.value)}
               >
                 <option value="">-- all categories --</option>
                 {categories.map((c) => (

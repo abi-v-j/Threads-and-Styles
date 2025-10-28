@@ -665,6 +665,16 @@ app.delete("/type/:id", async (req, res) => {
   }
 });
 
+
+
+
+
+
+
+
+
+
+
 // -------------------- 5️⃣ Categories --------------------
 const categorySchema = new Schema(
   {
@@ -861,6 +871,12 @@ app.delete("/category/:id", async (req, res) => {
   }
 });
 
+
+
+
+
+
+
 // -------------------- 6️⃣ Subcategories --------------------
 const subcategorySchema = new Schema(
   {
@@ -876,50 +892,30 @@ const subcategorySchema = new Schema(
 const Subcategory = mongoose.model("Subcategory", subcategorySchema);
 
 
-/*  NEW FILTER ROUTES  */
-// 1.  by-type    (returns every sub that lives under any category of the given type)
-app.get("/subcategoryByType/:typeId", async (req, res) => {
+
+// GET /category/byType/:typeId
+app.get("/categoryByType/:typeId", async (req, res) => {
   try {
     const typeId = toObjectId(req.params.typeId);
-    if (!typeId) return res.status(400).json({ message: "Invalid type ID" });
+    if (!typeId) return res.status(400).json({ message: "Invalid typeId" });
 
-    const results = await Subcategory.aggregate([
-      /* 1. join category to get its typeId */
-      {
-        $lookup: {
-          from: "categories",
-          localField: "categoryId",
-          foreignField: "_id",
-          as: "cat",
-        },
-      },
-      { $unwind: "$cat" },
-      /* 2. keep only subs whose category belongs to the chosen type */
-      { $match: { "cat.typeId": typeId } },
-      /* 3. final shape */
-      {
-        $project: {
-          subcategoryId: "$_id",
-          subcategoryName: "$name",
-          categoryId: "$cat._id",
-          categoryName: "$cat.name",
-          createdAt: 1,
-          updatedAt: 1,
-          _id: 0,
-        },
-      },
+    const results = await Category.aggregate([
+      { $match: { typeId } },
+      { $project: { categoryId: "$_id", categoryName: "$name", _id: 0 } },
     ]);
-    res.status(200).json({ message: "Subcategories filtered by type", results });
+    res.json({ results });
   } catch (err) {
-    res.status(500).json({ message: "Failed to filter by type", error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
+
 
 // 2.  by-category  (classic “give me every sub for this category”)
 app.get("/subcategoryByCategory/:categoryId", async (req, res) => {
   try {
     const categoryId = toObjectId(req.params.categoryId);
-    if (!categoryId) return res.status(400).json({ message: "Invalid category ID" });
+    if (!categoryId)
+      return res.status(400).json({ message: "Invalid category ID" });
 
     const results = await Subcategory.aggregate([
       { $match: { categoryId: categoryId } },
@@ -944,9 +940,13 @@ app.get("/subcategoryByCategory/:categoryId", async (req, res) => {
         },
       },
     ]);
-    res.status(200).json({ message: "Subcategories filtered by category", results });
+    res
+      .status(200)
+      .json({ message: "Subcategories filtered by category", results });
   } catch (err) {
-    res.status(500).json({ message: "Failed to filter by category", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to filter by category", error: err.message });
   }
 });
 
@@ -957,13 +957,32 @@ app.post("/subcategory", async (req, res) => {
     const { name, categoryId } = req.body;
     await Subcategory.create({ name, categoryId });
     const results = await Subcategory.aggregate([
-      { $lookup: { from: "categories", localField: "categoryId", foreignField: "_id", as: "cat" } },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "categoryId",
+          foreignField: "_id",
+          as: "cat",
+        },
+      },
       { $unwind: "$cat" },
-      { $project: { subcategoryId: "$_id", subcategoryName: "$name", categoryId: "$cat._id", categoryName: "$cat.name", createdAt: 1, updatedAt: 1, _id: 0 } },
+      {
+        $project: {
+          subcategoryId: "$_id",
+          subcategoryName: "$name",
+          categoryId: "$cat._id",
+          categoryName: "$cat.name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
     ]);
     res.status(201).json({ message: "Subcategory created", results });
   } catch (err) {
-    res.status(500).json({ message: "Failed to create subcategory", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to create subcategory", error: err.message });
   }
 });
 
@@ -971,13 +990,35 @@ app.post("/subcategory", async (req, res) => {
 app.get("/subcategory", async (req, res) => {
   try {
     const results = await Subcategory.aggregate([
-      { $lookup: { from: "categories", localField: "categoryId", foreignField: "_id", as: "cat" } },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "categoryId",
+          foreignField: "_id",
+          as: "cat",
+        },
+      },
       { $unwind: "$cat" },
-      { $project: { subcategoryId: "$_id", subcategoryName: "$name", categoryId: "$cat._id", categoryName: "$cat.name", createdAt: 1, updatedAt: 1, _id: 0 } },
+      {
+        $project: {
+          subcategoryId: "$_id",
+          subcategoryName: "$name",
+          categoryId: "$cat._id",
+          categoryName: "$cat.name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
     ]);
     res.status(200).json({ message: "Subcategories retrieved", results });
   } catch (err) {
-    res.status(500).json({ message: "Failed to retrieve subcategories", error: err.message });
+    res
+      .status(500)
+      .json({
+        message: "Failed to retrieve subcategories",
+        error: err.message,
+      });
   }
 });
 
@@ -988,14 +1029,36 @@ app.get("/subcategory/:id", async (req, res) => {
     if (!id) return res.status(400).json({ message: "Invalid subcategory ID" });
     const results = await Subcategory.aggregate([
       { $match: { _id: id } },
-      { $lookup: { from: "categories", localField: "categoryId", foreignField: "_id", as: "cat" } },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "categoryId",
+          foreignField: "_id",
+          as: "cat",
+        },
+      },
       { $unwind: "$cat" },
-      { $project: { subcategoryId: "$_id", subcategoryName: "$name", categoryId: "$cat._id", categoryName: "$cat.name", createdAt: 1, updatedAt: 1, _id: 0 } },
+      {
+        $project: {
+          subcategoryId: "$_id",
+          subcategoryName: "$name",
+          categoryId: "$cat._id",
+          categoryName: "$cat.name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
     ]);
-    if (!results.length) return res.status(404).json({ message: "Subcategory not found" });
-    res.status(200).json({ message: "Subcategory retrieved", results: results[0] });
+    if (!results.length)
+      return res.status(404).json({ message: "Subcategory not found" });
+    res
+      .status(200)
+      .json({ message: "Subcategory retrieved", results: results[0] });
   } catch (err) {
-    res.status(500).json({ message: "Failed to retrieve subcategory", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to retrieve subcategory", error: err.message });
   }
 });
 
@@ -1003,16 +1066,40 @@ app.get("/subcategory/:id", async (req, res) => {
 app.put("/subcategory/:id", async (req, res) => {
   try {
     const { name, categoryId } = req.body;
-    const updated = await Subcategory.findByIdAndUpdate(req.params.id, { name, categoryId }, { new: true, runValidators: true });
-    if (!updated) return res.status(404).json({ message: "Subcategory not found" });
+    const updated = await Subcategory.findByIdAndUpdate(
+      req.params.id,
+      { name, categoryId },
+      { new: true, runValidators: true }
+    );
+    if (!updated)
+      return res.status(404).json({ message: "Subcategory not found" });
     const results = await Subcategory.aggregate([
-      { $lookup: { from: "categories", localField: "categoryId", foreignField: "_id", as: "cat" } },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "categoryId",
+          foreignField: "_id",
+          as: "cat",
+        },
+      },
       { $unwind: "$cat" },
-      { $project: { subcategoryId: "$_id", subcategoryName: "$name", categoryId: "$cat._id", categoryName: "$cat.name", createdAt: 1, updatedAt: 1, _id: 0 } },
+      {
+        $project: {
+          subcategoryId: "$_id",
+          subcategoryName: "$name",
+          categoryId: "$cat._id",
+          categoryName: "$cat.name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
     ]);
     res.status(200).json({ message: "Subcategory updated", results });
   } catch (err) {
-    res.status(500).json({ message: "Failed to update subcategory", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to update subcategory", error: err.message });
   }
 });
 
@@ -1020,17 +1107,45 @@ app.put("/subcategory/:id", async (req, res) => {
 app.delete("/subcategory/:id", async (req, res) => {
   try {
     const deleted = await Subcategory.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ message: "Subcategory not found" });
+    if (!deleted)
+      return res.status(404).json({ message: "Subcategory not found" });
     const results = await Subcategory.aggregate([
-      { $lookup: { from: "categories", localField: "categoryId", foreignField: "_id", as: "cat" } },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "categoryId",
+          foreignField: "_id",
+          as: "cat",
+        },
+      },
       { $unwind: "$cat" },
-      { $project: { subcategoryId: "$_id", subcategoryName: "$name", categoryId: "$cat._id", categoryName: "$cat.name", createdAt: 1, updatedAt: 1, _id: 0 } },
+      {
+        $project: {
+          subcategoryId: "$_id",
+          subcategoryName: "$name",
+          categoryId: "$cat._id",
+          categoryName: "$cat.name",
+          createdAt: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
     ]);
     res.status(200).json({ message: "Subcategory deleted", results });
   } catch (err) {
-    res.status(500).json({ message: "Failed to delete subcategory", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to delete subcategory", error: err.message });
   }
 });
+
+
+
+
+
+
+
+
 
 
 // -------------------- 7️⃣ Brands --------------------
@@ -2902,21 +3017,6 @@ app.post("/productSize", async (req, res) => {
   }
 });
 
-// GET /category/byType/:typeId
-app.get("/categoryByType/:typeId", async (req, res) => {
-  try {
-    const typeId = toObjectId(req.params.typeId);
-    if (!typeId) return res.status(400).json({ message: "Invalid typeId" });
-
-    const data = await Category.aggregate([
-      { $match: { typeId } },
-      { $project: { categoryId: "$_id", categoryName: "$name", _id: 0 } },
-    ]);
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 // GET /subcategory/byCategory/:categoryId
 app.get("/subcategoryByCategory/:categoryId", async (req, res) => {
